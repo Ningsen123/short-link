@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅管理 - 短链工厂</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .billing { padding: 100px 0 60px; }
+        .billing h1 { font-size: 28px; font-weight: 700; margin-bottom: 40px; }
+        .plan-card { background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .plan-card.current { border-color: var(--primary); }
+        .plan-info h3 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .plan-info p { color: var(--text-muted); font-size: 14px; }
+        .plan-price { font-size: 28px; font-weight: 700; color: var(--primary); }
+        .plan-price span { font-size: 14px; color: var(--text-muted); }
+        .payment-methods { margin-top: 40px; }
+        .payment-methods h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+        .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .payment-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .payment-card:hover, .payment-card.selected { border-color: var(--primary); }
+        .payment-card .icon { font-size: 32px; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"><div class="nav-container"><a href="../index.html" class="logo"><span class="logo-icon">🔗</span><span class="logo-text">短链工厂</span></a><div class="nav-links"><a href="../index.html">首页</a><a href="dashboard.html">控制台</a><a href="billing.html">订阅</a></div><div class="nav-right"><a href="../index.html" class="btn btn-outline">退出</a></div></div></nav>
+    <section class="billing container">
+        <h1>💳 订阅管理</h1>
+        <div class="plan-card current">
+            <div class="plan-info"><h3>当前套餐：免费版</h3><p>100个短链/月，基础统计功能</p></div>
+            <div class="plan-price">¥0<span>/月</span></div>
+        </div>
+        <div class="plan-card">
+            <div class="plan-info"><h3>升级到专业版</h3><p>无限短链，详细统计，自定义域名</p></div>
+            <div><div class="plan-price">¥128<span>/月</span></div><button class="btn btn-primary btn-sm" style="margin-top:8px;">升级</button></div>
+        </div>
+        <div class="plan-card">
+            <div class="plan-info"><h3>升级到企业版</h3><p>无限短链，高级分析，多个域名，优先支持</p></div>
+            <div><div class="plan-price">¥388<span>/月</span></div><button class="btn btn-primary btn-sm" style="margin-top:8px;">升级</button></div>
+        </div>
+        <div class="payment-methods">
+            <h3>支持的支付方式</h3>
+            <div class="payment-grid">
+                <div class="payment-card selected"><div class="icon">💳</div><p>支付宝</p></div>
+                <div class="payment-card"><div class="icon">💚</div><p>微信支付</p></div>
+                <div class="payment-card"><div class="icon">🏦</div><p>银行卡</p></div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer"><div class="container"><div class="footer-bottom"><p>© 2026 短链工厂 All Rights Reserved</p></div></div></footer>
+    <script src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短链工厂 - 专业短链接服务</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">🔗</span>
+                <span class="logo-text">短链工厂</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">功能</a>
+                <a href="#pricing">定价</a>
+                <a href="#api">API</a>
+                <a href="pages/contact.html">联系我们</a>
+            </div>
+            <div class="nav-right">
+                <div class="user-menu" id="userMenu" style="display:none;">
+                    <div class="user-avatar" onclick="toggleDropdown()">👤</div>
+                    <div class="dropdown-menu" id="dropdown">
+                        <a href="pages/dashboard.html">控制台</a>
+                        <a href="pages/profile.html">个人中心</a>
+                        <a href="pages/billing.html">订阅管理</a>
+                        <a href="#" onclick="logout()">退出登录</a>
+                    </div>
+                </div>
+                <div class="auth-btns" id="authBtns">
+                    <button class="btn btn-outline" onclick="showModal('loginModal')">登录</button>
+                    <button class="btn btn-primary" onclick="showModal('registerModal')">免费注册</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>专业短链接服务 🔗</h1>
+            <p>一键缩短链接，实时追踪数据，提升营销效果</p>
+            
+            <div class="shorten-box">
+                <input type="text" id="longUrl" placeholder="粘贴长链接..." class="shorten-input">
+                <button class="btn btn-primary" onclick="shortenUrl()">缩短链接</button>
+            </div>
+            
+            <div class="result-box" id="resultBox" style="display:none;">
+                <div class="result-url">
+                    <span id="shortUrl"></span>
+                    <button class="btn btn-outline btn-sm" onclick="copyShortUrl()">📋 复制</button>
+                </div>
+                <div class="result-meta">
+                    <span>✅ 点击统计已开启</span>
+                    <span>🔒 链接安全</span>
+                    <span>⚡ 极速跳转</span>
+                </div>
+            </div>
+
+            <!-- 历史记录 -->
+            <div class="recent-section" style="max-width:700px;margin:0 auto;">
+                <h3 style="font-size:16px;font-weight:600;color:#64748B;margin-bottom:12px;">📋 最近生成</h3>
+                <div id="recentLinks"></div>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat"><strong>10M+</strong><span>链接已创建</span></div>
+                <div class="stat"><strong>50M+</strong><span>点击次数</span></div>
+                <div class="stat"><strong>99.9%</strong><span>可用性</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能 -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2>强大功能</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>数据追踪</h3>
+                    <p>实时查看点击次数、来源、地域、设备</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>自定义短链</h3>
+                    <p>创建品牌短链，提升专业形象</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3>链接过期</h3>
+                    <p>设置有效期，适合活动和限时优惠</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>密码保护</h3>
+                    <p>短链需要密码才能访问</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>智能跳转</h3>
+                    <p>根据设备自动跳转对应APP</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>极速响应</h3>
+                    <p>全球CDN，毫秒级跳转</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 定价 -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <h2>选择适合您的方案</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>免费版</h3>
+                    <div class="price">¥0<span>/月</span></div>
+                    <ul>
+                        <li>✅ 100个短链/月</li>
+                        <li>✅ 基础点击统计</li>
+                        <li>✅ 30天数据保留</li>
+                        <li class="disabled">❌ 自定义域名</li>
+                        <li class="disabled">❌ API访问</li>
+                    </ul>
+                    <button class="btn btn-outline btn-full" onclick="showModal('registerModal')">免费开始</button>
+                </div>
+                <div class="pricing-card popular">
+                    <div class="badge">推荐</div>
+                    <h3>专业版</h3>
+                    <div class="price">¥128<span>/月</span></div>
+                    <ul>
+                        <li>✅ 无限短链</li>
+                        <li>✅ 详细数据统计</li>
+                        <li>✅ 1年数据保留</li>
+                        <li>✅ 自定义域名</li>
+                        <li>✅ API访问</li>
+                    </ul>
+                    <button class="btn btn-primary btn-full" onclick="showModal('registerModal')">立即订阅</button>
+                </div>
+                <div class="pricing-card">
+                    <h3>企业版</h3>
+                    <div class="price">¥388<span>/月</span></div>
+                    <ul>
+                        <li>✅ 无限短链</li>
+                        <li>✅ 高级分析</li>
+                        <li>✅ 永久数据保留</li>
+                        <li>✅ 多个域名</li>
+                        <li>✅ 优先支持</li>
+                    </ul>
+                    <a href="pages/contact.html" class="btn btn-outline btn-full">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 底部 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo"><span class="logo-icon">🔗</span><span class="logo-text">短链工厂</span></a>
+                    <p>专业短链接服务，让每一次点击都有价值</p>
+                </div>
+                <div class="footer-links">
+                    <h4>产品</h4>
+                    <a href="#features">功能介绍</a>
+                    <a href="#pricing">定价方案</a>
+                    <a href="#api">开发者API</a>
+                </div>
+                <div class="footer-links">
+                    <h4>支持</h4>
+                    <a href="pages/help.html">帮助中心</a>
+                    <a href="pages/contact.html">联系我们</a>
+                    <a href="pages/terms.html">服务条款</a>
+                </div>
+                <div class="footer-links">
+                    <h4>公司</h4>
+                    <a href="pages/about.html">关于我们</a>
+                    <a href="pages/privacy.html">隐私政策</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 短链工厂 All Rights Reserved | 京ICP备XXXXXXXX号</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 登录弹窗 -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideModal('loginModal')">&times;</button>
+            <h2>登录</h2>
+            <form onsubmit="handleLogin(event)">
+                <input type="email" placeholder="邮箱" class="form-input" required>
+                <input type="password" placeholder="密码" class="form-input" required>
+                <button type="submit" class="btn btn-primary btn-full">登录</button>
+            </form>
+            <p class="modal-switch">没有账号？<a href="#" onclick="switchModal('loginModal','registerModal')">立即注册</a></p>
+            <div class="social-login">
+                <p>其他登录方式</p>
+                <div class="social-btns">
+                    <button class="social-btn wechat">微信登录</button>
+                    <button class="social-btn alipay">支付宝登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注册弹窗 -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideModal('registerModal')">&times;</button>
+            <h2>免费注册</h2>
+            <form onsubmit="handleRegister(event)">
+                <input type="text" placeholder="用户名" class="form-input" required>
+                <input type="email" placeholder="邮箱" class="form-input" required>
+                <input type="password" placeholder="密码" class="form-input" required minlength="6">
+                <input type="password" placeholder="确认密码" class="form-input" required>
+                <button type="submit" class="btn btn-primary btn-full">注册</button>
+            </form>
+            <p class="modal-switch">已有账号？<a href="#" onclick="switchModal('registerModal','loginModal')">去登录</a></p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

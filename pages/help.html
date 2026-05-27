@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帮助中心 - 短链工厂</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .page-header { padding: 140px 0 60px; background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); text-align: center; }
+        .page-header h1 { font-size: 42px; font-weight: 800; color: var(--secondary); }
+        .help-content { max-width: 800px; margin: 0 auto; padding: 60px 0; }
+        .faq-item { background: white; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; }
+        .faq-q { padding: 20px 24px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; }
+        .faq-a { padding: 0 24px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; display: none; }
+        .faq-item.open .faq-a { display: block; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"><div class="nav-container"><a href="../index.html" class="logo"><span class="logo-icon">🔗</span><span class="logo-text">短链工厂</span></a><div class="nav-links"><a href="../index.html">首页</a><a href="help.html">帮助</a><a href="contact.html">联系我们</a></div><div class="nav-right"><a href="../index.html" class="btn btn-outline">返回首页</a></div></div></nav>
+    <div class="page-header"><h1>帮助中心</h1><p>常见问题解答</p></div>
+    <section class="help-content">
+        <div class="faq-item open"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">什么是短链接？ <span>▼</span></div><div class="faq-a">短链接是将长网址转换为简短的URL，方便分享和传播。当用户访问短链接时，会自动跳转到原始长网址。</div></div>
+        <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">如何创建短链接？ <span>▼</span></div><div class="faq-a">在首页输入框粘贴长链接，点击"缩短链接"按钮即可生成。注册用户可以使用更多高级功能。</div></div>
+        <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">短链接会过期吗？ <span>▼</span></div><div class="faq-a">免费版链接永不过期。付费版可以设置链接有效期，适合活动和限时优惠场景。</div></div>
+        <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">如何查看统计数据？ <span>▼</span></div><div class="faq-a">注册并登录后，在控制台可以查看每个链接的点击次数、来源、地域等详细数据。</div></div>
+        <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">支持哪些支付方式？ <span>▼</span></div><div class="faq-a">支持支付宝、微信支付、银行卡等多种支付方式。</div></div>
+    </section>
+    <footer class="footer"><div class="container"><div class="footer-bottom"><p>© 2026 短链工厂 All Rights Reserved</p></div></div></footer>
+    <script>
+        document.querySelectorAll('.faq-q').forEach(q => q.onclick = () => q.parentElement.classList.toggle('open'));
+    </script>
+</body>
+</html>
