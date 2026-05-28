@@ -78,8 +78,8 @@ function updateUI(loggedIn) {
 }
 
 async function handleLogin(e) {
-  e.preventDefault();
-  const form = e.target;
+  if (e && e.preventDefault) e.preventDefault();
+  const form = e?.target || document.querySelector('#loginModal');
   const email = form.querySelector('input[type="email"]').value;
   const password = form.querySelector('input[type="password"]').value;
 
@@ -129,8 +129,8 @@ async function handleLogin(e) {
 }
 
 async function handleRegister(e) {
-  e.preventDefault();
-  const form = e.target;
+  if (e && e.preventDefault) e.preventDefault();
+  const form = e?.target || document.querySelector('#registerModal');
   const email = form.querySelector('input[type="email"]').value;
   const password = form.querySelectorAll('input[type="password"]')[0]?.value;
   const confirmPassword = form.querySelectorAll('input[type="password"]')[1]?.value;
