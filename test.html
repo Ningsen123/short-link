@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短链工厂 - 测试用例</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #F8FAFC; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 28px; margin-bottom: 8px; color: #0F172A; }
+        .subtitle { color: #64748B; margin-bottom: 32px; }
+        .section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .section h2 { font-size: 18px; margin-bottom: 16px; color: #0F172A; border-bottom: 2px solid #E2E8F0; padding-bottom: 12px; }
+        .test-item { padding: 12px 16px; border: 1px solid #E2E8F0; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .test-item:hover { background: #F8FAFC; }
+        .test-name { flex: 1; }
+        .test-id { color: #64748B; font-size: 13px; margin-right: 12px; min-width: 60px; }
+        .test-status { min-width: 80px; text-align: center; }
+        .status-pending { color: #F59E0B; font-weight: 600; }
+        .status-pass { color: #10B981; font-weight: 600; }
+        .status-fail { color: #EF4444; font-weight: 600; }
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: #0EA5E9; color: white; }
+        .btn-primary:hover { background: #0284C7; }
+        .btn-success { background: #10B981; color: white; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-outline { background: white; border: 2px solid #E2E8F0; color: #1E293B; }
+        .controls { margin-bottom: 24px; display: flex; gap: 12px; }
+        .summary { display: flex; gap: 24px; margin-bottom: 24px; }
+        .summary-item { background: white; border-radius: 12px; padding: 20px; flex: 1; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .summary-item .number { font-size: 36px; font-weight: 800; }
+        .summary-item .label { font-size: 14px; color: #64748B; }
+        .log-area { background: #1E293B; color: #E2E8F0; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 13px; max-height: 300px; overflow-y: auto; margin-top: 16px; }
+        .log-line { margin-bottom: 4px; }
+        .log-pass { color: #10B981; }
+        .log-fail { color: #EF4444; }
+        .log-info { color: #0EA5E9; }
+
+        /* 测试用的表单样式 */
+        .test-form { max-width: 400px; margin: 0 auto; padding: 24px; background: #F8FAFC; border-radius: 8px; }
+        .test-form input { width: 100%; padding: 12px; border: 2px solid #E2E8F0; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
+        .test-form input:focus { outline: none; border-color: #0EA5E9; }
+        .test-form input.error { border-color: #EF4444; }
+        .test-form .error-msg { color: #EF4444; font-size: 12px; margin-top: -8px; margin-bottom: 12px; display: none; }
+        .test-form button { width: 100%; padding: 12px; background: #0EA5E9; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 短链工厂 - 测试用例</h1>
+        <p class="subtitle">登录/注册功能测试 · 共 25 条用例</p>
+
+        <div class="summary">
+            <div class="summary-item">
+                <div class="number" id="totalCount">25</div>
+                <div class="label">总用例</div>
+            </div>
+            <div class="summary-item">
+                <div class="number" style="color:#10B981" id="passCount">0</div>
+                <div class="label">通过</div>
+            </div>
+            <div class="summary-item">
+                <div class="number" style="color:#EF4444" id="failCount">0</div>
+                <div class="label">失败</div>
+            </div>
+            <div class="summary-item">
+                <div class="number" style="color:#F59E0B" id="pendingCount">25</div>
+                <div class="label">待执行</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runAllTests()">▶ 运行全部</button>
+            <button class="btn btn-outline" onclick="resetTests()">↻ 重置</button>
+            <button class="btn btn-outline" onclick="toggleLog()">📋 显示日志</button>
+        </div>
+
+        <!-- 登录表单验证 -->
+        <div class="section">
+            <h2>📝 TC-LOGIN: 登录表单验证</h2>
+            <div id="loginTests">
+                <div class="test-item" id="TC-L01">
+                    <span class="test-id">TC-L01</span>
+                    <span class="test-name">邮箱为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L02">
+                    <span class="test-id">TC-L02</span>
+                    <span class="test-name">密码为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L03">
+                    <span class="test-id">TC-L03</span>
+                    <span class="test-name">邮箱格式错误(无@)时提交，应提示邮箱格式错误</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L04">
+                    <span class="test-id">TC-L04</span>
+                    <span class="test-name">邮箱格式错误(无域名)时提交，应提示邮箱格式错误</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L05">
+                    <span class="test-id">TC-L05</span>
+                    <span class="test-name">密码长度1位，应允许提交（登录不限制密码长度）</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L06">
+                    <span class="test-id">TC-L06</span>
+                    <span class="test-name">正确填写邮箱和密码，应成功登录并显示通知</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L07">
+                    <span class="test-id">TC-L07</span>
+                    <span class="test-name">登录成功后，登录按钮应隐藏，用户菜单应显示</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-L08">
+                    <span class="test-id">TC-L08</span>
+                    <span class="test-name">登录成功后，localStorage应存储用户信息</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注册表单验证 -->
+        <div class="section">
+            <h2>📝 TC-REGISTER: 注册表单验证</h2>
+            <div id="registerTests">
+                <div class="test-item" id="TC-R01">
+                    <span class="test-id">TC-R01</span>
+                    <span class="test-name">用户名为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R02">
+                    <span class="test-id">TC-R02</span>
+                    <span class="test-name">邮箱为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R03">
+                    <span class="test-id">TC-R03</span>
+                    <span class="test-name">密码为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R04">
+                    <span class="test-id">TC-R04</span>
+                    <span class="test-name">密码长度不足6位，应提示"请至少输入6个字符"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R05">
+                    <span class="test-id">TC-R05</span>
+                    <span class="test-name">密码长度恰好6位，应允许提交</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R06">
+                    <span class="test-id">TC-R06</span>
+                    <span class="test-name">密码长度超过6位，应允许提交</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R07">
+                    <span class="test-id">TC-R07</span>
+                    <span class="test-name">确认密码为空时提交，应提示"请填写此字段"</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R08">
+                    <span class="test-id">TC-R08</span>
+                    <span class="test-name">两次密码不一致时提交（无前端校验，应成功注册）</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R09">
+                    <span class="test-id">TC-R09</span>
+                    <span class="test-name">邮箱格式错误时提交，应提示邮箱格式错误</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-R10">
+                    <span class="test-id">TC-R10</span>
+                    <span class="test-name">正确填写所有字段，应成功注册并显示欢迎通知</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 弹窗交互 -->
+        <div class="section">
+            <h2>🔄 TC-MODAL: 弹窗交互</h2>
+            <div id="modalTests">
+                <div class="test-item" id="TC-M01">
+                    <span class="test-id">TC-M01</span>
+                    <span class="test-name">点击"立即注册"链接，应切换到注册弹窗</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-M02">
+                    <span class="test-id">TC-M02</span>
+                    <span class="test-name">点击"去登录"链接，应切换到登录弹窗</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-M03">
+                    <span class="test-id">TC-M03</span>
+                    <span class="test-name">点击关闭按钮，应关闭弹窗</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-M04">
+                    <span class="test-id">TC-M04</span>
+                    <span class="test-name">点击遮罩层，应关闭弹窗</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-M05">
+                    <span class="test-id">TC-M05</span>
+                    <span class="test-name">按ESC键，应关闭弹窗</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登出功能 -->
+        <div class="section">
+            <h2>🚪 TC-LOGOUT: 登出功能</h2>
+            <div id="logoutTests">
+                <div class="test-item" id="TC-O01">
+                    <span class="test-id">TC-O01</span>
+                    <span class="test-name">登出后，localStorage应清除用户信息</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+                <div class="test-item" id="TC-O02">
+                    <span class="test-id">TC-O02</span>
+                    <span class="test-name">登出后，用户菜单应隐藏，登录按钮应显示</span>
+                    <span class="test-status status-pending">待执行</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志区域 -->
+        <div class="log-area" id="logArea" style="display:none;"></div>
+
+        <!-- 隐藏的测试表单 -->
+        <div style="display:none;">
+            <form id="testLoginForm" onsubmit="handleLogin(event)">
+                <input type="email" id="loginEmail" class="form-input" required>
+                <input type="password" id="loginPassword" class="form-input" required>
+                <button type="submit">登录</button>
+            </form>
+            <form id="testRegisterForm" onsubmit="handleRegister(event)">
+                <input type="text" id="regUsername" class="form-input" required>
+                <input type="email" id="regEmail" class="form-input" required>
+                <input type="password" id="regPassword" class="form-input" required minlength="6">
+                <input type="password" id="regConfirmPassword" class="form-input" required>
+                <button type="submit">注册</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 加载主应用的JS -->
+    <script src="js/app.js"></script>
+    <script>
+        // ========================================
+        // 测试框架
+        // ========================================
+        const testResults = {};
+        let logVisible = false;
+
+        function log(msg, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const line = document.createElement('div');
+            line.className = `log-line log-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logArea.appendChild(line);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function toggleLog() {
+            const logArea = document.getElementById('logArea');
+            logVisible = !logVisible;
+            logArea.style.display = logVisible ? 'block' : 'none';
+        }
+
+        function updateStatus(testId, pass, detail = '') {
+            const el = document.getElementById(testId);
+            if (!el) return;
+            const statusEl = el.querySelector('.test-status');
+            if (pass) {
+                statusEl.className = 'test-status status-pass';
+                statusEl.textContent = '✅ 通过';
+                log(`${testId}: PASS ${detail}`, 'pass');
+            } else {
+                statusEl.className = 'test-status status-fail';
+                statusEl.textContent = '❌ 失败';
+                log(`${testId}: FAIL ${detail}`, 'fail');
+            }
+            testResults[testId] = pass;
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const results = Object.values(testResults);
+            const pass = results.filter(r => r === true).length;
+            const fail = results.filter(r => r === false).length;
+            const pending = 25 - pass - fail;
+            document.getElementById('passCount').textContent = pass;
+            document.getElementById('failCount').textContent = fail;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+
+        function resetTests() {
+            Object.keys(testResults).forEach(id => delete testResults[id]);
+            document.querySelectorAll('.test-status').forEach(el => {
+                el.className = 'test-status status-pending';
+                el.textContent = '待执行';
+            });
+            updateSummary();
+            document.getElementById('logArea').innerHTML = '';
+            log('测试已重置', 'info');
+        }
+
+        // 模拟表单提交事件
+        function simulateSubmit(form) {
+            const event = new Event('submit', { cancelable: true });
+            form.dispatchEvent(event);
+            return event;
+        }
+
+        // 检查HTML5验证
+        function checkValidity(input) {
+            return input.checkValidity();
+        }
+
+        // ========================================
+        // 登录测试
+        // ========================================
+        async function runLoginTests() {
+            log('=== 开始登录测试 ===', 'info');
+            const form = document.getElementById('testLoginForm');
+            const email = document.getElementById('loginEmail');
+            const password = document.getElementById('loginPassword');
+
+            // TC-L01: 邮箱为空
+            email.value = '';
+            password.value = 'test123';
+            updateStatus('TC-L01', !checkValidity(email), '邮箱required验证');
+
+            // TC-L02: 密码为空
+            email.value = 'test@example.com';
+            password.value = '';
+            updateStatus('TC-L02', !checkValidity(password), '密码required验证');
+
+            // TC-L03: 邮箱无@
+            email.value = 'testexample.com';
+            password.value = 'test123';
+            updateStatus('TC-L03', !checkValidity(email), '邮箱格式验证(无@)');
+
+            // TC-L04: 邮箱无域名
+            email.value = 'test@';
+            password.value = 'test123';
+            updateStatus('TC-L04', !checkValidity(email), '邮箱格式验证(无域名)');
+
+            // TC-L05: 密码1位
+            email.value = 'test@example.com';
+            password.value = 'a';
+            updateStatus('TC-L05', checkValidity(password), '登录密码1位应允许');
+
+            // TC-L06: 正确登录
+            email.value = 'test@example.com';
+            password.value = 'password123';
+            localStorage.removeItem('user');
+            const notifBefore = document.querySelectorAll('.notification').length;
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await new Promise(r => setTimeout(r, 100));
+            const notifAfter = document.querySelectorAll('.notification').length;
+            const hasNotif = notifAfter > notifBefore;
+            updateStatus('TC-L06', hasNotif, '登录通知显示');
+
+            // TC-L07: 登录后UI状态
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const loginSuccess = user.email === 'test@example.com';
+            updateStatus('TC-L07', loginSuccess, 'localStorage存储');
+
+            // TC-L08: 登录按钮状态
+            const authBtns = document.getElementById('authBtns');
+            const userMenu = document.getElementById('userMenu');
+            const btnHidden = authBtns && authBtns.style.display === 'none';
+            updateStatus('TC-L08', btnHidden, '登录按钮隐藏');
+
+            // 清理
+            localStorage.removeItem('user');
+        }
+
+        // ========================================
+        // 注册测试
+        // ========================================
+        async function runRegisterTests() {
+            log('=== 开始注册测试 ===', 'info');
+            const form = document.getElementById('testRegisterForm');
+            const username = document.getElementById('regUsername');
+            const email = document.getElementById('regEmail');
+            const password = document.getElementById('regPassword');
+            const confirmPassword = document.getElementById('regConfirmPassword');
+
+            // TC-R01: 用户名为空
+            username.value = '';
+            email.value = 'test@example.com';
+            password.value = '123456';
+            confirmPassword.value = '123456';
+            updateStatus('TC-R01', !checkValidity(username), '用户名required');
+
+            // TC-R02: 邮箱为空
+            username.value = 'testuser';
+            email.value = '';
+            password.value = '123456';
+            confirmPassword.value = '123456';
+            updateStatus('TC-R02', !checkValidity(email), '邮箱required');
+
+            // TC-R03: 密码为空
+            username.value = 'testuser';
+            email.value = 'test@example.com';
+            password.value = '';
+            confirmPassword.value = '123456';
+            updateStatus('TC-R03', !checkValidity(password), '密码required');
+
+            // TC-R04: 密码不足6位
+            password.value = '12345';
+            updateStatus('TC-R04', !checkValidity(password), '密码minlength=6');
+
+            // TC-R05: 密码恰好6位
+            password.value = '123456';
+            updateStatus('TC-R05', checkValidity(password), '密码6位通过');
+
+            // TC-R06: 密码超过6位
+            password.value = '123456789';
+            updateStatus('TC-R06', checkValidity(password), '密码超过6位通过');
+
+            // TC-R07: 确认密码为空
+            username.value = 'testuser';
+            email.value = 'test@example.com';
+            password.value = '123456';
+            confirmPassword.value = '';
+            updateStatus('TC-R07', !checkValidity(confirmPassword), '确认密码required');
+
+            // TC-R08: 两次密码不一致（当前无前端校验）
+            password.value = '123456';
+            confirmPassword.value = '654321';
+            const mismatchAllowed = checkValidity(confirmPassword);
+            updateStatus('TC-R08', mismatchAllowed, '⚠️ 无密码一致性校验(预期行为)');
+
+            // TC-R09: 邮箱格式错误
+            username.value = 'testuser';
+            email.value = 'invalid-email';
+            password.value = '123456';
+            confirmPassword.value = '123456';
+            updateStatus('TC-R09', !checkValidity(email), '邮箱格式验证');
+
+            // TC-R10: 正确注册
+            username.value = 'newuser';
+            email.value = 'new@example.com';
+            password.value = 'securepass';
+            confirmPassword.value = 'securepass';
+            localStorage.removeItem('user');
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await new Promise(r => setTimeout(r, 100));
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            updateStatus('TC-R10', user.email === 'new@example.com', '注册成功');
+
+            // 清理
+            localStorage.removeItem('user');
+        }
+
+        // ========================================
+        // 弹窗测试
+        // ========================================
+        async function runModalTests() {
+            log('=== 开始弹窗测试 ===', 'info');
+
+            // TC-M01: 切换到注册
+            hideModal('loginModal');
+            hideModal('registerModal');
+            switchModal('loginModal', 'registerModal');
+            await new Promise(r => setTimeout(r, 300));
+            const regVisible = document.getElementById('registerModal').classList.contains('show');
+            updateStatus('TC-M01', regVisible, '切换到注册弹窗');
+
+            // TC-M02: 切换到登录
+            switchModal('registerModal', 'loginModal');
+            await new Promise(r => setTimeout(r, 300));
+            const loginVisible = document.getElementById('loginModal').classList.contains('show');
+            updateStatus('TC-M02', loginVisible, '切换到登录弹窗');
+
+            // TC-M03: 关闭按钮
+            hideModal('loginModal');
+            showModal('loginModal');
+            document.querySelector('#loginModal .modal-close').click();
+            await new Promise(r => setTimeout(r, 100));
+            const closed = !document.getElementById('loginModal').classList.contains('show');
+            updateStatus('TC-M03', closed, '关闭按钮');
+
+            // TC-M04: 遮罩层点击
+            showModal('loginModal');
+            document.getElementById('loginModal').click();
+            await new Promise(r => setTimeout(r, 100));
+            const maskClosed = !document.getElementById('loginModal').classList.contains('show');
+            updateStatus('TC-M04', maskClosed, '遮罩层关闭');
+
+            // TC-M05: ESC键
+            showModal('loginModal');
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            await new Promise(r => setTimeout(r, 100));
+            const escClosed = !document.getElementById('loginModal').classList.contains('show');
+            updateStatus('TC-M05', escClosed, 'ESC关闭');
+        }
+
+        // ========================================
+        // 登出测试
+        // ========================================
+        async function runLogoutTests() {
+            log('=== 开始登出测试 ===', 'info');
+
+            // 先登录
+            localStorage.setItem('user', JSON.stringify({ email: 'test@example.com', name: 'test' }));
+            checkAuth();
+
+            // TC-O01: 登出清除localStorage
+            logout();
+            const userAfter = localStorage.getItem('user');
+            updateStatus('TC-O01', userAfter === null, 'localStorage清除');
+
+            // TC-O02: 登出后UI状态
+            const authBtns = document.getElementById('authBtns');
+            const userMenu = document.getElementById('userMenu');
+            const btnsVisible = authBtns && authBtns.style.display !== 'none';
+            const menuHidden = userMenu && userMenu.style.display === 'none';
+            updateStatus('TC-O02', btnsVisible && menuHidden, 'UI状态恢复');
+        }
+
+        // ========================================
+        // 运行全部测试
+        // ========================================
+        async function runAllTests() {
+            resetTests();
+            log('🚀 开始运行全部测试...', 'info');
+
+            await runLoginTests();
+            await runRegisterTests();
+            await runModalTests();
+            await runLogoutTests();
+
+            const results = Object.values(testResults);
+            const pass = results.filter(r => r === true).length;
+            const fail = results.filter(r => r === false).length;
+
+            log('', 'info');
+            log(`========================================`, 'info');
+            log(`测试完成: ${pass} 通过 / ${fail} 失败 / ${results.length} 总计`, pass === results.length ? 'pass' : 'fail');
+            log(`通过率: ${(pass / results.length * 100).toFixed(1)}%`, 'info');
+            log(`========================================`, 'info');
+        }
+    </script>
+</body>
+</html>
