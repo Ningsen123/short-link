@@ -2,13 +2,7 @@ name = "short-link-worker"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-# D1 数据库绑定
 [[d1_databases]]
 binding = "DB"
 database_name = "short-links"
-database_id = "local-dev"
-
-# 自定义域名（上线后配置）
-# routes = [
-#   { pattern = "s.yhstar.xin/*", zone_name = "yhstar.xin" }
-# ]
+database_id = "480ba770-54bf-44ff-b8e0-9aad2f2c1f77"
