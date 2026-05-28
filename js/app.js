@@ -556,6 +556,15 @@ function toggleDropdown() {
   document.getElementById('dropdown')?.classList.toggle('show');
 }
 
+// HTML onclick调用的兼容函数
+function handleShorten() { shortenUrl(); }
+function handlePlan(plan) {
+  if (!authToken) { showModal('loginModal'); return; }
+  showNotification('套餐升级功能即将上线');
+}
+function copyResult() { copyShortUrl(); }
+function isLoggedIn() { return !!authToken; }
+
 // ========================================
 // 动画样式注入
 // ========================================
