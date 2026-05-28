@@ -88,10 +88,9 @@ async function handleLogin(e) {
     return;
   }
 
-  const btn = form.querySelector('button[type="submit"]');
-  const origText = btn.textContent;
-  btn.textContent = '登录中...';
-  btn.disabled = true;
+  const btn = form.querySelector('button[type="submit"]') || form.querySelector('.btn-primary') || form.querySelector('button');
+  const origText = btn?.textContent || '登录';
+  if (btn) { btn.textContent = '登录中...'; btn.disabled = true; }
 
   try {
     const res = await fetch(`${API_BASE}/api/login`, {
@@ -123,8 +122,7 @@ async function handleLogin(e) {
   } catch (err) {
     showNotification('网络错误，请稍后重试', 'error');
   } finally {
-    btn.textContent = origText;
-    btn.disabled = false;
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
   }
 }
 
@@ -177,8 +175,7 @@ async function handleRegister(e) {
   } catch (err) {
     showNotification('网络错误，请稍后重试', 'error');
   } finally {
-    btn.textContent = origText;
-    btn.disabled = false;
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
   }
 }
 
