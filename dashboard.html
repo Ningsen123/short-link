@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - Lnk.sh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #08090a;
+            color: #e8e8ec;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Nav */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 56px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(8,9,10,0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.3px;
+        }
+        .nav-brand span { color: #5e6ad2; }
+        .nav-links { display: flex; align-items: center; gap: 24px; }
+        .nav-links a {
+            color: #8a8a9a;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.15s;
+        }
+        .nav-links a:hover, .nav-links a.active { color: #e8e8ec; }
+        .nav-user { display: flex; align-items: center; gap: 12px; }
+        .nav-user-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #e8e8ec;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .nav-user-btn:hover { background: rgba(255,255,255,0.06); }
+        .btn-auth {
+            background: #5e6ad2;
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-auth:hover { opacity: 0.85; }
+        .btn-logout {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #8a8a9a;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-logout:hover { color: #e8e8ec; border-color: rgba(255,255,255,0.2); }
+
+        /* Dashboard Layout */
+        .dashboard {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+        .dashboard-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 28px;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .user-info-left h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .user-info-left .email {
+            font-size: 13px;
+            color: #8a8a9a;
+        }
+        .plan-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .plan-free { background: rgba(255,255,255,0.06); color: #8a8a9a; }
+        .plan-paid { background: rgba(94,106,210,0.15); color: #5e6ad2; }
+        .plan-expiry {
+            font-size: 12px;
+            color: #6a6a7a;
+            margin-top: 6px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 18px 20px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6a6a7a;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Usage Bar */
+        .usage-section { margin-bottom: 16px; }
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .usage-header span {
+            font-size: 13px;
+            color: #8a8a9a;
+        }
+        .usage-header strong {
+            font-size: 13px;
+            color: #e8e8ec;
+        }
+        .usage-bar-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .usage-bar-fill {
+            height: 100%;
+            background: #5e6ad2;
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .usage-bar-fill.warning { background: #e5a33f; }
+        .usage-bar-fill.full { background: #e5534b; }
+
+        /* Links Table */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .btn-upgrade {
+            background: #5e6ad2;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-upgrade:hover { opacity: 0.85; }
+
+        .links-table-wrap {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .links-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .links-table th {
+            text-align: left;
+            padding: 12px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6a6a7a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.02);
+        }
+        .links-table td {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: #c8c8d0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .links-table tr:last-child td { border-bottom: none; }
+        .links-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .link-code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: #5e6ad2;
+            font-weight: 500;
+        }
+        .link-url {
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #8a8a9a;
+            font-size: 12px;
+        }
+        .link-clicks { color: #e8e8ec; font-weight: 500; }
+        .link-date { color: #6a6a7a; font-size: 12px; }
+        .link-actions { display: flex; gap: 8px; }
+        .btn-sm {
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: none;
+            color: #8a8a9a;
+            transition: all 0.15s;
+        }
+        .btn-sm:hover { color: #e8e8ec; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+        .btn-sm.btn-delete:hover { color: #e5534b; border-color: rgba(229,83,75,0.3); }
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #6a6a7a;
+            font-size: 14px;
+        }
+        .empty-state a { color: #5e6ad2; text-decoration: none; }
+        .empty-state a:hover { text-decoration: underline; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #111114;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 32px;
+            width: 100%;
+            max-width: 380px;
+        }
+        .modal h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .modal label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8a8a9a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #e8e8ec;
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .modal input:focus { border-color: #5e6ad2; }
+        .modal .btn-primary {
+            width: 100%;
+            padding: 10px;
+            background: #5e6ad2;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .modal .btn-primary:hover { opacity: 0.85; }
+        .modal .switch-mode {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #6a6a7a;
+        }
+        .modal .switch-mode a { color: #5e6ad2; cursor: pointer; text-decoration: none; }
+        .modal .switch-mode a:hover { text-decoration: underline; }
+        .modal .close-modal {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #6a6a7a;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .modal-error {
+            background: rgba(229,83,75,0.1);
+            border: 1px solid rgba(229,83,75,0.2);
+            color: #e5534b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1a1a1f;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e8e8ec;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 300;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .navbar { padding: 0 16px; }
+            .dashboard { padding: 20px 16px 48px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .links-table-wrap { overflow-x: auto; }
+            .links-table { min-width: 560px; }
+            .user-info { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="/" class="nav-brand">lnk<span>.</span>sh</a>
+    <div class="nav-links">
+        <a href="/">首页</a>
+        <a href="/dashboard.html" class="active">个人中心</a>
+    </div>
+    <div class="nav-user" id="navUser">
+        <button class="btn-auth" id="btnShowLogin" onclick="showModal('login')">登录</button>
+        <button class="btn-auth" id="btnShowReg" onclick="showModal('register')" style="background:none;border:1px solid rgba(255,255,255,0.12);color:#e8e8ec;">注册</button>
+    </div>
+</nav>
+
+<!-- Dashboard -->
+<main class="dashboard">
+    <h1 class="dashboard-title">个人中心</h1>
+
+    <!-- User Info Card -->
+    <div class="card">
+        <div class="user-info">
+            <div class="user-info-left">
+                <h2 id="userEmail">-</h2>
+                <div class="email" id="userPlanBadge"><span class="plan-badge plan-free">FREE</span></div>
+            </div>
+            <div style="text-align:right;">
+                <div class="plan-expiry" id="userExpiry"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="statLinks">0</div>
+            <div class="stat-label">总链接数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statClicks">0</div>
+            <div class="stat-label">总点击数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statMonth">0</div>
+            <div class="stat-label">本月创建</div>
+        </div>
+    </div>
+
+    <!-- Usage -->
+    <div class="card usage-section">
+        <div class="usage-header">
+            <span>链接用量</span>
+            <strong id="usageText">0 / 5 条</strong>
+        </div>
+        <div class="usage-bar-track">
+            <div class="usage-bar-fill" id="usageBar" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- Links Table -->
+    <div class="section-header">
+        <h2 class="section-title">我的链接</h2>
+        <button class="btn-upgrade" id="btnUpgrade" style="display:none;" onclick="window.location='/'">升级套餐</button>
+    </div>
+    <div class="links-table-wrap">
+        <table class="links-table">
+            <thead>
+                <tr>
+                    <th>短码</th>
+                    <th>原始链接</th>
+                    <th>点击数</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="linksBody">
+                <tr><td colspan="5" class="empty-state">加载中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Login Modal -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal" style="position:relative;">
+        <h3>登录</h3>
+        <div class="modal-error" id="loginError"></div>
+        <label>邮箱</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com">
+        <label>密码</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+        <button class="btn-primary" id="btnLogin">登录</button>
+        <div class="switch-mode">没有账号？<a onclick="showModal('register')">注册</a></div>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal-overlay" id="registerModal">
+    <div class="modal" style="position:relative;">
+        <h3>注册</h3>
+        <div class="modal-error" id="regError"></div>
+        <label>邮箱</label>
+        <input type="email" id="regEmail" placeholder="you@example.com">
+        <label>密码</label>
+        <input type="password" id="regPassword" placeholder="至少6位">
+        <button class="btn-primary" id="btnRegister">注册</button>
+        <div class="switch-mode">已有账号？<a onclick="showModal('login')">登录</a></div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+<script>
+(function() {
+    const API = '';
+    const token = localStorage.getItem('token');
+
+    // Auth check
+    if (!token) {
+        window.location.href = '/';
+        return;
+    }
+
+    // Nav user state
+    function updateNav() {
+        document.getElementById('navUser').innerHTML =
+            '<button class="btn-logout" id="btnLogout">退出</button>';
+        document.getElementById('btnLogout').onclick = () => {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        };
+    }
+    updateNav();
+
+    // Plan limits
+    const PLAN_LIMITS = { free: 5, monthly: 80, quarterly: 200, yearly: Infinity };
+    const PLAN_NAMES = { free: 'FREE', monthly: '月度版', quarterly: '季度版', yearly: '年度版' };
+
+    let userInfo = null;
+    let links = [];
+
+    // Toast
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Fetch user info
+    async function fetchUser() {
+        try {
+            const res = await fetch(API + '/api/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error();
+            userInfo = await res.json();
+            renderUser();
+        } catch (e) {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+    }
+
+    // Fetch links
+    async function fetchLinks() {
+        try {
+            const res = await fetch(API + '/api/links', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error();
+            links = await res.json();
+            if (!Array.isArray(links)) links = links.links || [];
+            renderLinks();
+            renderStats();
+            renderUsage();
+        } catch (e) {
+            document.getElementById('linksBody').innerHTML =
+                '<tr><td colspan="5" class="empty-state">加载失败，请刷新重试</td></tr>';
+        }
+    }
+
+    // Render user
+    function renderUser() {
+        if (!userInfo) return;
+        document.getElementById('userEmail').textContent = userInfo.email;
+        const plan = userInfo.plan || 'free';
+        const isPaid = plan !== 'free';
+        const badge = '<span class="plan-badge ' + (isPaid ? 'plan-paid' : 'plan-free') + '">' +
+            (PLAN_NAMES[plan] || plan.toUpperCase()) + '</span>';
+        document.getElementById('userPlanBadge').innerHTML = badge;
+
+        if (userInfo.expiry) {
+            document.getElementById('userExpiry').textContent = '到期: ' + new Date(userInfo.expiry).toLocaleDateString('zh-CN');
+        }
+
+        // Show upgrade button for free users
+        if (plan === 'free') {
+            document.getElementById('btnUpgrade').style.display = '';
+        }
+    }
+
+    // Render stats
+    function renderStats() {
+        const total = links.length;
+        const clicks = links.reduce((s, l) => s + (l.clicks || 0), 0);
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisMonth = links.filter(l => new Date(l.created_at) >= monthStart).length;
+
+        document.getElementById('statLinks').textContent = total;
+        document.getElementById('statClicks').textContent = clicks;
+        document.getElementById('statMonth').textContent = thisMonth;
+    }
+
+    // Render usage bar
+    function renderUsage() {
+        const plan = (userInfo && userInfo.plan) || 'free';
+        const limit = PLAN_LIMITS[plan] || 5;
+        const used = links.length;
+        const pct = limit === Infinity ? 0 : Math.min(100, (used / limit) * 100);
+
+        const limitText = limit === Infinity ? '∞' : limit;
+        document.getElementById('usageText').textContent = used + ' / ' + limitText + ' 条';
+
+        const bar = document.getElementById('usageBar');
+        bar.style.width = pct + '%';
+        bar.className = 'usage-bar-fill' + (pct >= 100 ? ' full' : pct >= 80 ? ' warning' : '');
+    }
+
+    // Render links table
+    function renderLinks() {
+        const tbody = document.getElementById('linksBody');
+        if (!links.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">还没有短链接，去<a href="/">首页</a>创建一个吧</td></tr>';
+            return;
+        }
+        tbody.innerHTML = links.map(l => {
+            const shortUrl = window.location.origin + '/' + l.code;
+            const date = l.created_at ? new Date(l.created_at).toLocaleDateString('zh-CN') : '-';
+            return '<tr>' +
+                '<td><span class="link-code">' + escHtml(l.code) + '</span></td>' +
+                '<td><div class="link-url" title="' + escHtml(l.long_url) + '">' + escHtml(l.long_url) + '</div></td>' +
+                '<td class="link-clicks">' + (l.clicks || 0) + '</td>' +
+                '<td class="link-date">' + date + '</td>' +
+                '<td class="link-actions">' +
+                    '<button class="btn-sm" onclick="copyLink(\'' + escAttr(shortUrl) + '\')">复制</button>' +
+                    '<button class="btn-sm btn-delete" onclick="deleteLink(\'' + escAttr(l.code) + '\')">删除</button>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+    function escAttr(s) {
+        return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Copy link
+    window.copyLink = function(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('已复制到剪贴板');
+        }).catch(() => {
+            // fallback
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('已复制到剪贴板');
+        });
+    };
+
+    // Delete link
+    window.deleteLink = async function(code) {
+        if (!confirm('确定删除短链接 /' + code + ' ？')) return;
+        try {
+            const res = await fetch(API + '/api/links/' + code, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error();
+            showToast('已删除');
+            fetchLinks();
+        } catch (e) {
+            showToast('删除失败');
+        }
+    };
+
+    // Login/Register modals
+    window.showModal = function(type) {
+        document.getElementById('loginModal').classList.toggle('active', type === 'login');
+        document.getElementById('registerModal').classList.toggle('active', type === 'register');
+    };
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', e => { if (e.target === el) el.classList.remove('active'); });
+    });
+
+    // Login
+    document.getElementById('btnLogin').onclick = async () => {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const errEl = document.getElementById('loginError');
+        errEl.style.display = 'none';
+        if (!email || !password) { errEl.textContent = '请填写邮箱和密码'; errEl.style.display = 'block'; return; }
+        try {
+            const res = await fetch(API + '/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) { errEl.textContent = data.error || '登录失败'; errEl.style.display = 'block'; return; }
+            localStorage.setItem('token', data.token);
+            window.location.reload();
+        } catch (e) {
+            errEl.textContent = '网络错误'; errEl.style.display = 'block';
+        }
+    };
+
+    // Register
+    document.getElementById('btnRegister').onclick = async () => {
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const errEl = document.getElementById('regError');
+        errEl.style.display = 'none';
+        if (!email || !password) { errEl.textContent = '请填写邮箱和密码'; errEl.style.display = 'block'; return; }
+        if (password.length < 6) { errEl.textContent = '密码至少6位'; errEl.style.display = 'block'; return; }
+        try {
+            const res = await fetch(API + '/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) { errEl.textContent = data.error || '注册失败'; errEl.style.display = 'block'; return; }
+            localStorage.setItem('token', data.token);
+            window.location.reload();
+        } catch (e) {
+            errEl.textContent = '网络错误'; errEl.style.display = 'block';
+        }
+    };
+
+    // Init
+    fetchUser().then(fetchLinks);
+})();
+</script>
+</body>
+</html>
