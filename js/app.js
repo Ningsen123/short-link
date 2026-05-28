@@ -79,16 +79,15 @@ function updateUI(loggedIn) {
 
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
-  const form = e?.target || document.querySelector('#loginModal');
-  const email = form.querySelector('input[type="email"]').value;
-  const password = form.querySelector('input[type="password"]').value;
+  const email = document.getElementById('loginEmail')?.value || '';
+  const password = document.getElementById('loginPassword')?.value || '';
 
   if (!email || !password) {
     showNotification('请填写邮箱和密码', 'error');
     return;
   }
 
-  const btn = form.querySelector('button[type="submit"]') || form.querySelector('.btn-primary') || form.querySelector('button');
+  const btn = document.querySelector('#loginModal .btn-primary');
   const origText = btn?.textContent || '登录';
   if (btn) { btn.textContent = '登录中...'; btn.disabled = true; }
 
@@ -128,10 +127,9 @@ async function handleLogin(e) {
 
 async function handleRegister(e) {
   if (e && e.preventDefault) e.preventDefault();
-  const form = e?.target || document.querySelector('#registerModal');
-  const email = form.querySelector('input[type="email"]').value;
-  const password = form.querySelectorAll('input[type="password"]')[0]?.value;
-  const confirmPassword = form.querySelectorAll('input[type="password"]')[1]?.value;
+  const email = document.getElementById('regEmail')?.value || '';
+  const password = document.getElementById('regPassword')?.value || '';
+  const confirmPassword = document.getElementById('regConfirm')?.value || '';
 
   if (!email || !password) {
     showNotification('请填写邮箱和密码', 'error');
@@ -146,10 +144,9 @@ async function handleRegister(e) {
     return;
   }
 
-  const btn = form.querySelector('button[type="submit"]');
-  const origText = btn.textContent;
-  btn.textContent = '注册中...';
-  btn.disabled = true;
+  const btn = document.querySelector('#registerModal .btn-primary');
+  const origText = btn?.textContent || '注册';
+  if (btn) { btn.textContent = '注册中...'; btn.disabled = true; }
 
   try {
     const res = await fetch(`${API_BASE}/api/register`, {
@@ -477,7 +474,14 @@ function hideModal(id) {
 }
 
 function switchModal(from, to) {
-  hideModal(from);
+  // 支持1个参数: switchModal('targetModal') 关闭所有弹窗并显示目标
+  // 支持2个参数: switchModal('fromModal', 'toModal') 关闭from显示to
+  if (to === undefined) {
+    to = from;
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+  } else {
+    hideModal(from);
+  }
   setTimeout(() => showModal(to), 200);
 }
 
