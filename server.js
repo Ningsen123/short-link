@@ -23,6 +23,9 @@ db.exec(`
     password_hash TEXT NOT NULL,
     plan TEXT DEFAULT 'free',
     links_limit INTEGER DEFAULT 5,
+    wechat_openid TEXT,
+    nickname TEXT,
+    plan_expires_at TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS links (
@@ -34,12 +37,27 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id TEXT UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL,
+    plan TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    pay_method TEXT DEFAULT 'wechat',
+    status TEXT DEFAULT 'pending',
+    created_at TEXT DEFAULT (datetime('now')),
+    paid_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
   CREATE INDEX IF NOT EXISTS idx_links_code ON links(code);
   CREATE INDEX IF NOT EXISTS idx_links_user ON links(user_id);
+  CREATE INDEX IF NOT EXISTS idx_users_wechat ON users(wechat_openid);
+  CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 `);
 
 const PLAN_LIMITS = { free: 5, monthly: 80, quarterly: 200, yearly: 999999 };
 const PLAN_NAMES = { free: '免费版', monthly: '月卡', quarterly: '季卡', yearly: '年卡' };
+const PLAN_PRICES = { monthly: 990, quarterly: 2500, yearly: 8800 };
 
 function generateCode() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -180,6 +198,63 @@ async function handle(req, res, p, m) {
     if (!link) return json(res, { error: '链接不存在' }, 404);
     db.prepare('DELETE FROM links WHERE id = ?').run(link.id);
     return json(res, { success: true, message: '已删除' });
+  }
+
+  // 微信登录: 获取二维码
+  if (p === '/api/auth/wechat/qrcode' && m === 'GET') {
+    const state = crypto.randomUUID();
+    const qrUrl = `https://open.weixin.qq.com/connect/qrconnect?appid=wx_demo&redirect_uri=${encodeURIComponent('http://localhost:8787/api/auth/wechat/callback')}&response_type=code&scope=snsapi_login&state=${state}`;
+    return json(res, { success: true, data: { qr_url: qrUrl, state } });
+  }
+
+  // 微信登录: 回调
+  if (p === '/api/auth/wechat/callback' && m === 'GET') {
+    const code = parsedUrl.query.code || 'mock_code';
+    const openid = 'wx_' + code.substring(0, 16);
+    let user = db.prepare('SELECT * FROM users WHERE wechat_openid = ?').get(openid);
+    if (!user) {
+      const r = db.prepare('INSERT INTO users (email, password_hash, plan, links_limit, wechat_openid, nickname) VALUES (?, "", "free", 5, ?, ?)').run(openid + '@wechat', openid, '微信用户');
+      user = { id: r.lastInsertRowid, email: openid + '@wechat', plan: 'free' };
+    }
+    const token = createJWT({ id: user.id, email: user.email });
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`<script>window.opener.postMessage({type:'wechat_login',token:'${token}',user:{id:${user.id},email:'${user.email}',plan:'${user.plan}'}},'*');window.close();</script><p>登录成功</p>`);
+    return;
+  }
+
+  // 套餐价格
+  if (p === '/api/plans' && m === 'GET') {
+    return json(res, { success: true, data: { plans: [
+      { id: 'free', name: '免费版', price: 0, limit: 5 },
+      { id: 'monthly', name: '月卡', price: 990, limit: 80, badge: '推荐' },
+      { id: 'quarterly', name: '季卡', price: 2500, limit: 200 },
+      { id: 'yearly', name: '年卡', price: 8800, limit: 999999 },
+    ]}});
+  }
+
+  // 创建支付订单
+  if (p === '/api/payment/create' && m === 'POST') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '请先登录' }, 401);
+    const { plan, pay_method } = await readBody(req);
+    const prices = { monthly: 990, quarterly: 2500, yearly: 8800 };
+    if (!prices[plan]) return json(res, { error: '无效套餐' }, 400);
+    const orderId = 'ORD' + Date.now() + Math.random().toString(36).substring(2, 8);
+    const days = plan === 'monthly' ? 30 : plan === 'quarterly' ? 90 : 365;
+    db.prepare(`INSERT INTO orders (order_id, user_id, plan, amount, pay_method, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', datetime('now'))`).run(orderId, user.id, plan, prices[plan], pay_method || 'wechat');
+    // Mock: 直接升级
+    const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+    db.prepare('UPDATE users SET plan = ?, plan_expires_at = ?, links_limit = ? WHERE id = ?').run(plan, expiresAt, PLAN_LIMITS[plan], user.id);
+    db.prepare(`UPDATE orders SET status = 'paid', paid_at = datetime('now') WHERE order_id = ?`).run(orderId);
+    return json(res, { success: true, data: { order_id: orderId, status: 'paid', plan, expires_at: expiresAt, message: '支付成功(测试模式)' } });
+  }
+
+  // 获取订单
+  if (p === '/api/orders' && m === 'GET') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '请先登录' }, 401);
+    const orders = db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
+    return json(res, { success: true, data: orders });
   }
 
   // 短链跳转

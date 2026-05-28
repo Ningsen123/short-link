@@ -557,10 +557,75 @@ function toggleDropdown() {
 function handleShorten() { shortenUrl(); }
 function handlePlan(plan) {
   if (!authToken) { showModal('loginModal'); return; }
-  showNotification('套餐升级功能即将上线');
+  if (plan === 'free') { showNotification('您已是免费版用户'); return; }
+  handlePayment(plan);
 }
 function copyResult() { copyShortUrl(); }
 function isLoggedIn() { return !!authToken; }
+
+// ===== 微信登录 =====
+function wechatLogin() {
+  const w = window.open('', 'wechat_login', 'width=400,height=500');
+  fetch(`${API_BASE}/api/auth/wechat/qrcode`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.data?.qr_url) {
+        w.location.href = data.data.qr_url;
+      }
+    })
+    .catch(() => { w.close(); showNotification('微信登录暂不可用', 'error'); });
+}
+
+// 监听微信登录回调
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'wechat_login' && e.data.token) {
+    authToken = e.data.token;
+    currentUser = e.data.user;
+    localStorage.setItem('token', authToken);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    hideModal('loginModal');
+    updateUI(true);
+    showNotification('微信登录成功！');
+    if (isDashboard) loadDashboard();
+    else loadRecentLinks();
+  }
+});
+
+// ===== 支付 =====
+async function handlePayment(plan) {
+  if (!authToken) { showModal('loginModal'); return; }
+
+  const planNames = { monthly: '月卡 ¥9.9', quarterly: '季卡 ¥25', yearly: '年卡 ¥88' };
+  const payMethod = confirm(`确认购买 ${planNames[plan]}？\n\n点击"确定"使用微信支付\n点击"取消"使用支付宝`) ? 'wechat' : 'alipay';
+
+  try {
+    showNotification('正在创建订单...');
+    const res = await fetch(`${API_BASE}/api/payment/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      body: JSON.stringify({ plan, pay_method: payMethod }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showNotification(data.error || '创建订单失败', 'error');
+      return;
+    }
+
+    if (data.data.status === 'paid') {
+      // Mock模式直接成功
+      currentUser = { ...currentUser, plan: data.data.plan };
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      showNotification('🎉 支付成功！套餐已升级');
+      if (isDashboard) loadDashboard();
+    } else {
+      // 真实支付: 跳转支付页面
+      if (data.data.pay_url) window.open(data.data.pay_url, '_blank');
+    }
+  } catch (err) {
+    showNotification('网络错误', 'error');
+  }
+}
 
 // ========================================
 // 动画样式注入

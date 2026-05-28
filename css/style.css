@@ -180,6 +180,24 @@ a:hover { color: var(--accent-hover); }
 .pricing-features li::before { content: "✓"; color: var(--accent); font-size: 12px; }
 .pricing-card .btn { width: 100%; }
 
+/* 微信登录按钮 */
+.btn-wechat {
+  width: 100%; padding: 12px; background: #07C160; color: white;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.2s;
+}
+.btn-wechat:hover { background: #06AD56; }
+
+/* 分割线 */
+.divider {
+  display: flex; align-items: center; margin: 16px 0; color: #64748B; font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: #334155;
+}
+.divider span { padding: 0 12px; }
+
 /* Footer */
 .footer {
   border-top: 1px solid var(--border);
