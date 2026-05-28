@@ -1,244 +1,211 @@
 // ========================================
-// 短链工厂 - 本地开发服务器
-// 模拟Cloudflare Worker + SQLite
+// 短链工厂 - 本地开发服务器 v2
 // ========================================
 
 const http = require('http');
 const url = require('url');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const Database = require('better-sqlite3');
 
 const PORT = 8787;
+const JWT_SECRET = 'local-dev-secret-2026';
 
-// 初始化SQLite数据库
 const dbPath = path.join(__dirname, 'data.db');
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
-// 创建表
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    plan TEXT DEFAULT 'free',
+    links_limit INTEGER DEFAULT 5,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
   CREATE TABLE IF NOT EXISTS links (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     code TEXT UNIQUE NOT NULL,
     long_url TEXT NOT NULL,
+    user_id INTEGER,
     clicks INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    expires_at TEXT DEFAULT NULL,
-    password TEXT DEFAULT NULL
-  );
-  CREATE TABLE IF NOT EXISTS clicks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    link_id INTEGER NOT NULL,
-    clicked_at TEXT DEFAULT (datetime('now')),
-    referer TEXT DEFAULT NULL,
-    user_agent TEXT DEFAULT NULL,
-    country TEXT DEFAULT NULL,
-    FOREIGN KEY (link_id) REFERENCES links(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
   CREATE INDEX IF NOT EXISTS idx_links_code ON links(code);
+  CREATE INDEX IF NOT EXISTS idx_links_user ON links(user_id);
 `);
 
-// 生成短码
-function generateCode(length = 6) {
+const PLAN_LIMITS = { free: 5, monthly: 80, quarterly: 200, yearly: 999999 };
+const PLAN_NAMES = { free: '免费版', monthly: '月卡', quarterly: '季卡', yearly: '年卡' };
+
+function generateCode() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   return code;
 }
 
-// CORS头
-function setCors(res, origin) {
-  res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+function hashPassword(password, salt) {
+  return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+}
+
+function createJWT(payload) {
+  const h = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const b = Buffer.from(JSON.stringify({ ...payload, exp: Math.floor(Date.now() / 1000) + 86400 * 7 })).toString('base64url');
+  const sig = crypto.createHmac('sha256', JWT_SECRET).update(h + '.' + b).digest('base64url');
+  return h + '.' + b + '.' + sig;
+}
+
+function verifyJWT(token) {
+  try {
+    const [h, b, sig] = token.split('.');
+    if (sig !== crypto.createHmac('sha256', JWT_SECRET).update(h + '.' + b).digest('base64url')) return null;
+    const payload = JSON.parse(Buffer.from(b, 'base64url').toString());
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch { return null; }
+}
+
+function authenticate(req) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return null;
+  const payload = verifyJWT(auth.slice(7));
+  if (!payload) return null;
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(payload.id);
+}
+
+function setCORS(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-// JSON响应
-function jsonResponse(res, data, status = 200) {
+function json(res, data, status = 200) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
 }
 
-// 验证URL
-function isValidUrl(str) {
-  try {
-    const u = new URL(str);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch { return false; }
-}
-
-// 读取请求体
 function readBody(req) {
   return new Promise((resolve) => {
     let body = '';
     req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try { resolve(JSON.parse(body)); }
-      catch { resolve({}); }
-    });
+    req.on('end', () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
   });
 }
 
-// ========== 服务器 ==========
-const server = http.createServer(async (req, res) => {
+const mimeTypes = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg' };
+
+const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
-  const pathName = parsedUrl.pathname;
-  const method = req.method;
-  const origin = req.headers.origin;
+  const p = parsedUrl.pathname;
+  const m = req.method;
 
-  setCors(res, origin);
-  if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+  setCORS(res);
+  if (m === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
-  try {
-    // === API: 创建短链 ===
-    if (pathName === '/api/shorten' && method === 'POST') {
-      const body = await readBody(req);
-      let { url: longUrl, code, expiresAt, password } = body;
+  handle(req, res, p, m).catch(err => { console.error(err); json(res, { error: 'Internal error' }, 500); });
+});
 
-      if (!longUrl || !isValidUrl(longUrl)) {
-        return jsonResponse(res, { error: '请输入有效的URL' }, 400);
-      }
+async function handle(req, res, p, m) {
+  // 健康检查
+  if (p === '/api/health') return json(res, { status: 'ok' });
 
-      if (code) {
-        if (!/^[a-zA-Z0-9]{4,20}$/.test(code)) {
-          return jsonResponse(res, { error: '短码只能包含字母和数字，4-20位' }, 400);
-        }
-        const existing = db.prepare('SELECT id FROM links WHERE code = ?').get(code);
-        if (existing) return jsonResponse(res, { error: '该短码已被使用' }, 409);
-      } else {
-        let attempts = 0;
-        do {
-          code = generateCode();
-          const existing = db.prepare('SELECT id FROM links WHERE code = ?').get(code);
-          if (!existing) break;
-          attempts++;
-        } while (attempts < 10);
-      }
+  // 注册
+  if (p === '/api/register' && m === 'POST') {
+    const { email, password } = await readBody(req);
+    if (!email || !password) return json(res, { error: '邮箱和密码必填' }, 400);
+    if (password.length < 6) return json(res, { error: '密码至少6位' }, 400);
+    if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) return json(res, { error: '该邮箱已注册' }, 409);
+    const salt = crypto.randomBytes(16);
+    const hash = hashPassword(password, salt);
+    const stored = salt.toString('hex') + ':' + hash.toString('hex');
+    const r = db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)').run(email, stored);
+    const token = createJWT({ id: r.lastInsertRowid, email });
+    return json(res, { success: true, data: { id: r.lastInsertRowid, email, token, plan: 'free', links_limit: 5 } });
+  }
 
-      db.prepare('INSERT INTO links (code, long_url, expires_at, password) VALUES (?, ?, ?, ?)')
-        .run(code, longUrl, expiresAt || null, password || null);
+  // 登录
+  if (p === '/api/login' && m === 'POST') {
+    const { email, password } = await readBody(req);
+    if (!email || !password) return json(res, { error: '邮箱和密码必填' }, 400);
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) return json(res, { error: '邮箱或密码错误' }, 401);
+    const [saltHex, hashHex] = user.password_hash.split(':');
+    if (hashPassword(password, Buffer.from(saltHex, 'hex')).toString('hex') !== hashHex) return json(res, { error: '邮箱或密码错误' }, 401);
+    const token = createJWT({ id: user.id, email: user.email });
+    return json(res, { success: true, data: { id: user.id, email: user.email, token, plan: user.plan, links_limit: PLAN_LIMITS[user.plan] || 5 } });
+  }
 
-      const host = `http://localhost:${PORT}`;
-      return jsonResponse(res, {
-        success: true,
-        data: {
-          code,
-          short_url: `${host}/${code}`,
-          long_url: longUrl,
-          clicks: 0,
-          created_at: new Date().toISOString(),
-        },
-      });
-    }
+  // 获取用户信息
+  if (p === '/api/me' && m === 'GET') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '未登录' }, 401);
+    const cnt = db.prepare('SELECT COUNT(*) as c FROM links WHERE user_id = ?').get(user.id);
+    const clicks = db.prepare('SELECT COALESCE(SUM(clicks),0) as t FROM links WHERE user_id = ?').get(user.id);
+    return json(res, { success: true, data: { id: user.id, email: user.email, plan: user.plan, plan_name: PLAN_NAMES[user.plan], links_limit: PLAN_LIMITS[user.plan], links_count: cnt.c, total_clicks: clicks.t } });
+  }
 
-    // === API: 获取列表 ===
-    if (pathName === '/api/links' && method === 'GET') {
-      const page = parseInt(parsedUrl.query.page || '1');
-      const limit = Math.min(parseInt(parsedUrl.query.limit || '20'), 100);
-      const offset = (page - 1) * limit;
+  // 创建短链
+  if (p === '/api/shorten' && m === 'POST') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '请先登录' }, 401);
+    const { url: longUrl, code } = await readBody(req);
+    if (!longUrl) return json(res, { error: '请输入链接' }, 400);
+    const cnt = db.prepare('SELECT COUNT(*) as c FROM links WHERE user_id = ?').get(user.id);
+    const limit = PLAN_LIMITS[user.plan] || 5;
+    if (cnt.c >= limit) return json(res, { error: `已达上限(${limit}条)，请升级套餐` }, 403);
+    let finalCode = code || generateCode();
+    if (db.prepare('SELECT id FROM links WHERE code = ?').get(finalCode)) return json(res, { error: '短码已被使用' }, 409);
+    db.prepare('INSERT INTO links (code, long_url, user_id) VALUES (?, ?, ?)').run(finalCode, longUrl, user.id);
+    return json(res, { success: true, data: { code: finalCode, short_url: `http://localhost:${PORT}/${finalCode}`, long_url: longUrl, clicks: 0 } });
+  }
 
-      const links = db.prepare('SELECT code, long_url, clicks, created_at FROM links ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
-      const total = db.prepare('SELECT COUNT(*) as count FROM links').get();
+  // 获取链接列表
+  if (p === '/api/links' && m === 'GET') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '请先登录' }, 401);
+    const links = db.prepare('SELECT code, long_url, clicks, created_at FROM links WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
+    return json(res, { success: true, data: links.map(l => ({ ...l, short_url: `http://localhost:${PORT}/${l.code}` })) });
+  }
 
-      return jsonResponse(res, {
-        success: true,
-        data: links,
-        pagination: { page, limit, total: total.count, pages: Math.ceil(total.count / limit) },
-      });
-    }
+  // 删除链接
+  const delMatch = p.match(/^\/api\/links\/([a-zA-Z0-9]+)$/);
+  if (delMatch && m === 'DELETE') {
+    const user = authenticate(req);
+    if (!user) return json(res, { error: '请先登录' }, 401);
+    const link = db.prepare('SELECT * FROM links WHERE code = ? AND user_id = ?').get(delMatch[1], user.id);
+    if (!link) return json(res, { error: '链接不存在' }, 404);
+    db.prepare('DELETE FROM links WHERE id = ?').run(link.id);
+    return json(res, { success: true, message: '已删除' });
+  }
 
-    // === API: 获取单个 ===
-    if (pathName.startsWith('/api/links/') && method === 'GET') {
-      const code = pathName.split('/api/links/')[1];
-      const link = db.prepare('SELECT code, long_url, clicks, created_at FROM links WHERE code = ?').get(code);
-      if (!link) return jsonResponse(res, { error: '不存在' }, 404);
-      return jsonResponse(res, { success: true, data: link });
-    }
-
-    // === API: 删除 ===
-    if (pathName.startsWith('/api/links/') && method === 'DELETE') {
-      const code = pathName.split('/api/links/')[1];
-      const result = db.prepare('DELETE FROM links WHERE code = ?').run(code);
-      if (result.changes === 0) return jsonResponse(res, { error: '不存在' }, 404);
-      return jsonResponse(res, { success: true, message: '已删除' });
-    }
-
-    // === API: 统计 ===
-    if (pathName.startsWith('/api/stats/') && method === 'GET') {
-      const code = pathName.split('/api/stats/')[1];
-      const link = db.prepare('SELECT * FROM links WHERE code = ?').get(code);
-      if (!link) return jsonResponse(res, { error: '不存在' }, 404);
-
-      const dailyClicks = db.prepare(`
-        SELECT date(clicked_at) as date, COUNT(*) as count 
-        FROM clicks WHERE link_id = ? AND clicked_at >= datetime('now', '-30 days')
-        GROUP BY date(clicked_at) ORDER BY date
-      `).all(link.id);
-
-      return jsonResponse(res, {
-        success: true,
-        data: { code: link.code, long_url: link.long_url, total_clicks: link.clicks, daily_clicks: dailyClicks },
-      });
-    }
-
-    // === API: 健康检查 ===
-    if (pathName === '/api/health') {
-      return jsonResponse(res, { status: 'ok', time: new Date().toISOString() });
-    }
-
-    // === 短链跳转 ===
-    const shortMatch = pathName.match(/^\/(?:s\/)?([a-zA-Z0-9]{4,8})$/);
-    if (shortMatch && method === 'GET') {
-      const code = shortMatch[1];
-      const link = db.prepare('SELECT * FROM links WHERE code = ?').get(code);
-      if (!link) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        return res.end('短链接不存在');
-      }
-
-      // 记录点击
-      db.prepare('INSERT INTO clicks (link_id, referer, user_agent) VALUES (?, ?, ?)')
-        .run(link.id, req.headers.referer || null, req.headers['user-agent'] || null);
+  // 短链跳转
+  const shortMatch = p.match(/^\/([a-zA-Z0-9]{6})$/);
+  if (shortMatch && m === 'GET') {
+    const link = db.prepare('SELECT * FROM links WHERE code = ?').get(shortMatch[1]);
+    if (link) {
       db.prepare('UPDATE links SET clicks = clicks + 1 WHERE id = ?').run(link.id);
-
-      // 302跳转
       res.writeHead(302, { Location: link.long_url });
       return res.end();
     }
-
-    // === 静态文件 ===
-    let filePath = pathName === '/' ? '/index.html' : pathName;
-    filePath = path.join(__dirname, filePath);
-    const ext = path.extname(filePath);
-    const mimeTypes = {
-      '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
-      '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
-      '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-    };
-
-    fs.readFile(filePath, (err, content) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
-      } else {
-        res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' });
-        res.end(content);
-      }
-    });
-
-  } catch (err) {
-    console.error(err);
-    jsonResponse(res, { error: 'Internal error' }, 500);
   }
-});
+
+  // 静态文件
+  let filePath = p === '/' ? '/index.html' : p;
+  filePath = path.join(__dirname, filePath);
+  try {
+    const content = fs.readFileSync(filePath);
+    res.writeHead(200, { 'Content-Type': mimeTypes[path.extname(filePath)] || 'application/octet-stream' });
+    res.end(content);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  }
+}
 
 server.listen(PORT, () => {
-  console.log(`\n🔗 短链工厂 本地开发服务器`);
-  console.log(`   地址: http://localhost:${PORT}`);
-  console.log(`   API:  http://localhost:${PORT}/api/shorten`);
-  console.log(`   健康: http://localhost:${PORT}/api/health`);
-  console.log(`   数据: ${dbPath}\n`);
+  console.log(`🔗 短链工厂 本地服务器 v2 - http://localhost:${PORT}`);
 });

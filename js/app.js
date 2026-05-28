@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 首页: 加载最近链接
     loadRecentLinks();
     // 回车提交
-    const longUrlInput = document.getElementById('longUrl');
+    const longUrlInput = document.getElementById('urlInput');
     if (longUrlInput) {
       longUrlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') shortenUrl();
@@ -66,15 +66,11 @@ function loadAuth() {
 }
 
 function updateUI(loggedIn) {
-  const authBtns = document.getElementById('authBtns');
+  const authBtns = document.getElementById('authButtons');
   const userMenu = document.getElementById('userMenu');
-  const userName = document.getElementById('userName');
 
   if (authBtns) authBtns.style.display = loggedIn ? 'none' : 'flex';
   if (userMenu) userMenu.style.display = loggedIn ? 'block' : 'none';
-  if (userName && currentUser) {
-    userName.textContent = currentUser.email.split('@')[0];
-  }
 }
 
 async function handleLogin(e) {
@@ -198,8 +194,8 @@ async function shortenUrl() {
     return;
   }
 
-  const input = document.getElementById('longUrl');
-  const longUrl = input.value.trim();
+  const input = document.getElementById('urlInput');
+  const longUrl = input?.value?.trim();
 
   if (!longUrl) {
     showNotification('请输入链接', 'error');
@@ -211,10 +207,9 @@ async function shortenUrl() {
     return;
   }
 
-  const btn = document.querySelector('.shorten-box .btn');
-  const originalText = btn.textContent;
-  btn.textContent = '生成中...';
-  btn.disabled = true;
+  const btn = document.querySelector('.shorten-form .btn');
+  const originalText = btn?.textContent || '缩短链接';
+  if (btn) { btn.textContent = '生成中...'; btn.disabled = true; }
 
   try {
     const res = await fetch(`${API_BASE}/api/shorten`, {
@@ -239,11 +234,13 @@ async function shortenUrl() {
       return;
     }
 
-    const resultBox = document.getElementById('resultBox');
+    const resultBox = document.getElementById('shortenResult');
     const shortUrlEl = document.getElementById('shortUrl');
-    shortUrlEl.textContent = data.data.short_url;
-    resultBox.style.display = 'block';
-    resultBox.scrollIntoView({ behavior: 'smooth' });
+    if (shortUrlEl) shortUrlEl.textContent = data.data.short_url;
+    if (resultBox) {
+      resultBox.classList.add('show');
+      resultBox.scrollIntoView({ behavior: 'smooth' });
+    }
 
     input.value = '';
     loadRecentLinks();
@@ -251,8 +248,7 @@ async function shortenUrl() {
   } catch (err) {
     showNotification('网络错误', 'error');
   } finally {
-    btn.textContent = originalText;
-    btn.disabled = false;
+    if (btn) { btn.textContent = originalText; btn.disabled = false; }
   }
 }
 
@@ -488,7 +484,7 @@ function switchModal(from, to) {
 // ESC关闭弹窗
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    document.querySelectorAll('.modal.show').forEach(m => {
+    document.querySelectorAll('.modal-overlay.show').forEach(m => {
       m.classList.remove('show');
     });
     document.body.style.overflow = '';
@@ -499,10 +495,10 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => {
   // 关闭下拉菜单
   if (!e.target.closest('.user-menu')) {
-    document.getElementById('dropdown')?.classList.remove('show');
+    document.getElementById('userDropdown')?.classList.remove('show');
   }
   // 点击遮罩关闭弹窗
-  if (e.target.classList.contains('modal')) {
+  if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('show');
     document.body.style.overflow = '';
   }
@@ -540,7 +536,7 @@ function showNotification(msg, type = 'success') {
 // 导航栏
 // ========================================
 function setupScrollEffect() {
-  const navbar = document.getElementById('navbar');
+  const navbar = document.querySelector('.navbar');
   if (!navbar) return;
   window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
@@ -554,7 +550,7 @@ function setupScrollEffect() {
 }
 
 function toggleDropdown() {
-  document.getElementById('dropdown')?.classList.toggle('show');
+  document.getElementById('userDropdown')?.classList.toggle('show');
 }
 
 // HTML onclick调用的兼容函数
@@ -587,6 +583,7 @@ style.textContent = `
   .long-url { color:#94A3B8; font-size:13px; }
   .link-meta { color:#64748B; font-size:12px; }
   .link-actions { display:flex; gap:8px; }
-  .modal.show { display:flex; }
+  .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
 `;
 document.head.appendChild(style);
