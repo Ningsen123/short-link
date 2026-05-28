@@ -2,10 +2,8 @@
 // 短链工厂 - 核心逻辑 v3 (对接Worker API)
 // ========================================
 
-// API 基础地址（本地开发用 wrangler dev 地址，上线后改）
-const API_BASE = window.location.hostname === 'localhost' 
-  ? 'http://localhost:8787' 
-  : '';  // 同域，Worker和Pages绑定同一域名
+// API 基础地址（Cloudflare Pages同域，无需配置）
+const API_BASE = '';
 
 // 用户状态
 let currentUser = null;
