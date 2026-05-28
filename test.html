@@ -232,7 +232,7 @@
         <!-- 日志区域 -->
         <div class="log-area" id="logArea" style="display:none;"></div>
 
-        <!-- 隐藏的测试表单 -->
+        <!-- 隐藏的测试表单和弹窗 -->
         <div style="display:none;">
             <form id="testLoginForm" onsubmit="handleLogin(event)">
                 <input type="email" id="loginEmail" class="form-input" required>
@@ -246,6 +246,26 @@
                 <input type="password" id="regConfirmPassword" class="form-input" required>
                 <button type="submit">注册</button>
             </form>
+        </div>
+
+        <!-- 弹窗(测试需要) -->
+        <div class="modal" id="loginModal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="hideModal('loginModal')">&times;</button>
+                <h2>登录</h2>
+            </div>
+        </div>
+        <div class="modal" id="registerModal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="hideModal('registerModal')">&times;</button>
+                <h2>注册</h2>
+            </div>
+        </div>
+
+        <!-- 导航元素(测试需要) -->
+        <div id="authBtns" style="display:flex;"></div>
+        <div id="userMenu" style="display:none;">
+            <div id="dropdown" class="dropdown-menu"></div>
         </div>
     </div>
 
@@ -369,15 +389,14 @@
             updateStatus('TC-L06', hasNotif, '登录通知显示');
 
             // TC-L07: 登录后UI状态
+            const authBtns = document.getElementById('authBtns');
+            const btnHidden = authBtns && authBtns.style.display === 'none';
+            updateStatus('TC-L07', btnHidden, '登录按钮隐藏');
+
+            // TC-L08: localStorage存储
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const loginSuccess = user.email === 'test@example.com';
-            updateStatus('TC-L07', loginSuccess, 'localStorage存储');
-
-            // TC-L08: 登录按钮状态
-            const authBtns = document.getElementById('authBtns');
-            const userMenu = document.getElementById('userMenu');
-            const btnHidden = authBtns && authBtns.style.display === 'none';
-            updateStatus('TC-L08', btnHidden, '登录按钮隐藏');
+            updateStatus('TC-L08', loginSuccess, 'localStorage存储');
 
             // 清理
             localStorage.removeItem('user');
